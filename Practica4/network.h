@@ -13,6 +13,9 @@ public:
     void addRouter(Router* router);
     void removeRouter(Router* router);
     void addConnection(Router* router1, Router* router2, int cost);
+    void loadTopologyFromFile(const std::string& filename);
+    Router* findOrCreateRouter(const std::string& name);
+    void generateRandomNetwork(int numRouters, int maxCost);
     void printAllRoutingTables();
 };
 
