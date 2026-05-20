@@ -8,6 +8,7 @@ class Router {
 public:
     std::string name;
     std::map<Router*, int> routingTable;
+    std::map<Router*, Router*> previousRouter;
 
     Router(const std::string& name): name(name) {}
 
