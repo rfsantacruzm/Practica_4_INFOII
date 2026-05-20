@@ -179,7 +179,7 @@ void Network::getShortestPath(Router* source, Router* destination) {
     }
 
     // Imprimir el camino más corto
-    cout << "Camino más corto de " << source->name << " a " << destination->name << ": ";
+    cout << "Camino mas corto de " << source->name << " a " << destination->name << ": ";
     for (auto it = path.begin(); it != path.end(); ++it) {
         if (it != path.begin()) cout << " -> ";
         cout << (*it)->name;
