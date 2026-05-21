@@ -63,6 +63,7 @@ int main() {
         switch (option) {
         case 1: {
             string name = leerNombre("Nombre del enrutador: ");
+
             // Verificar que no exista ya en la red
             bool existe = false;
             for (auto& r : network.routers) {
@@ -75,33 +76,76 @@ int main() {
                 cout << "Error: ya existe un enrutador con el nombre \"" << name << "\".\n";
                 break;
             }
+
             Router* router = new Router(name);
+
             int numConnections = leerEntero("Numero de conexiones: ", 0, 1000);
+
             int i = 0;
             while (i < numConnections) {
                 cout << "-- Conexion " << i + 1 << " --\n";
-                string connectedRouterName = leerNombre("Nombre del enrutador conectado: ");
+                string connectedRouterName = leerNombre("Nombre del enrutador destino: ");
+
                 // Evitar conectarse a si mismo
                 if (connectedRouterName == name) {
                     cout << "Error: un enrutador no puede conectarse a si mismo. Ingresa otro nombre.\n";
                     continue;
                 }
+
+                // Verificar si el destino existe en la red
+                Router* connectedRouter = nullptr;
+                for (auto& r : network.routers) {
+                    if (r->name == connectedRouterName) {
+                        connectedRouter = r;
+                        break;
+                    }
+                }
+
+                if (connectedRouter == nullptr) {
+                    cout << "El enrutador \"" << connectedRouterName << "\" no existe en la red.\n";
+                    int crear = leerEntero("¿Deseas crearlo? (1 = Si, 2 = No): ", 1, 2);
+                    if (crear == 2) {
+                        cout << "Conexion omitida. Verifica el nombre e intentalo de nuevo.\n";
+                        continue;
+                    }
+                    connectedRouter = network.findOrCreateRouter(connectedRouterName);
+                    cout << "Enrutador \"" << connectedRouterName << "\" creado.\n";
+                }
+
+                // Verificar si ya existe una conexion previa entre ambos routers
+                bool conexionPrevia = router->routingTable.find(connectedRouter) != router->routingTable.end();
+                if (conexionPrevia) {
+                    int costoActual = router->routingTable[connectedRouter];
+                    cout << "Advertencia: ya existe una conexion con \"" << connectedRouterName
+                         << "\" (costo actual: " << costoActual << ").\n";
+                    int reescribir = leerEntero("¿Deseas reescribir el costo? (1 = Si, 2 = No): ", 1, 2);
+                    if (reescribir == 2) {
+                        cout << "Costo mantenido.\n";
+                        i++;
+                        continue;
+                    }
+                }
+
                 int cost = leerEntero("Costo de la conexion: ", 1, numeric_limits<int>::max() - 1);
-                Router* connectedRouter = network.findOrCreateRouter(connectedRouterName);
+
                 router->updateRoutingTable(connectedRouter, cost);
                 connectedRouter->updateRoutingTable(router, cost);
                 i++;
             }
+
             network.addRouter(router);
             cout << "Enrutador \"" << name << "\" agregado correctamente.\n";
             break;
         }
+
         case 2: {
             if (network.routers.empty()) {
                 cout << "Error: la red esta vacia, no hay enrutadores para remover.\n";
                 break;
             }
+
             string name = leerNombre("Nombre del enrutador a remover: ");
+
             Router* router = nullptr;
             for (auto& r : network.routers) {
                 if (r->name == name) {
@@ -109,25 +153,31 @@ int main() {
                     break;
                 }
             }
+
             if (router == nullptr) {
                 cout << "Error: no existe un enrutador con el nombre \"" << name << "\".\n";
                 break;
             }
+
             network.removeRouter(router);
             cout << "Enrutador \"" << name << "\" removido correctamente.\n";
             break;
         }
+
         case 3: {
             if (network.routers.empty()) {
                 cout << "Error: la red esta vacia, no hay nada que actualizar.\n";
                 break;
             }
+
             network.updateNetwork();
             cout << "Red actualizada correctamente.\n";
             break;
         }
+
         case 4: {
             string filename = leerNombre("Nombre del archivo: ");
+
             ifstream testFile(filename);
             if (!testFile.is_open()) {
                 cout << "Error: no se pudo abrir el archivo \"" << filename << "\". Verifica que exista y sea accesible.\n";
@@ -139,10 +189,12 @@ int main() {
                 break;
             }
             testFile.close();
+
             network.loadTopologyFromFile(filename);
             cout << "Topologia cargada correctamente desde \"" << filename << "\".\n";
             break;
         }
+
         case 5: {
             string name = leerNombre("Nombre del enrutador: ");
             Router* r = network.findOrCreateRouter(name);
@@ -162,6 +214,7 @@ int main() {
             }
             break;
         }
+
         case 6: {
             if (!network.routers.empty()) {
                 cout << "Advertencia: la red ya tiene " << network.routers.size()
@@ -173,12 +226,15 @@ int main() {
                     break;
                 }
             }
+
             int numRouters = leerEntero("Numero de enrutadores: ", 2, 1000);
             int maxCost    = leerEntero("Costo maximo: ", 1, numeric_limits<int>::max() - 1);
+
             network.generateRandomNetwork(numRouters, maxCost);
             cout << "Red aleatoria de " << numRouters << " enrutadores generada correctamente.\n";
             break;
         }
+
         case 7: {
             if (network.routers.empty()) {
                 cout << "Error: la red esta vacia.\n";
@@ -188,12 +244,15 @@ int main() {
                 cout << "Error: se necesitan al menos 2 enrutadores para buscar un camino.\n";
                 break;
             }
+
             string sourceName = leerNombre("Nombre del enrutador origen: ");
             string destinationName = leerNombre("Nombre del enrutador destino: ");
+
             if (sourceName == destinationName) {
                 cout << "Error: el origen y el destino no pueden ser el mismo enrutador.\n";
                 break;
             }
+
             // Verificar que ambos existan en la red (sin crear nuevos)
             Router* source = nullptr;
             Router* destination = nullptr;
@@ -201,6 +260,7 @@ int main() {
                 if (r->name == sourceName)      source      = r;
                 if (r->name == destinationName) destination = r;
             }
+
             if (source == nullptr) {
                 cout << "Error: no existe un enrutador con el nombre \"" << sourceName << "\".\n";
                 break;
@@ -209,17 +269,21 @@ int main() {
                 cout << "Error: no existe un enrutador con el nombre \"" << destinationName << "\".\n";
                 break;
             }
+
             network.getShortestPath(source, destination);
             break;
         }
+
         case 8: {
             if (network.routers.empty()) {
                 cout << "Error: la red esta vacia, no hay tablas que imprimir.\n";
                 break;
             }
+
             network.printAllRoutingTables();
             break;
         }
+
         case 9: {
             cout << "Saliendo...\n";
             break;
